@@ -506,7 +506,6 @@
         <h4>Contacto</h4>
         <ul>
           <li><a href="https://wa.me/34604954153" target="_blank" rel="noopener">WhatsApp</a></li>
-          <li><a href="mailto:hola@tuperfumeria.com">hola@tuperfumeria.com</a></li>
           <li><a href="https://www.instagram.com/esenciabynoe_" target="_blank" rel="noopener">Instagram</a></li>
           <li><a href="https://www.tiktok.com/@esenciabynoe?_r=1&amp;_t=ZN-99avQNVfJOo" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
@@ -547,13 +546,13 @@
           Si no pones "img", se muestra un icono de botella de color.
 
    PRECIOS:
-   - Los perfumes ("mujer" y "hombre") usan siempre los tamaños y precios
-     fijos definidos en SIZE_PRICES (30ml = 8€, 100ml = 20€), así que no
-     hace falta poner precio en cada perfume.
+   - Los perfumes ("mujer" y "hombre") vienen en un único formato de 100ml
+     con precio fijo (definido en PERFUME_PRICE), así que no hace falta
+     poner precio en cada perfume.
    - Brumas y ambientadores no tienen tamaños: pon su precio directamente
      en el campo "price" (ej. "14,90 €").
    ====================================================================== */
-const SIZE_PRICES = { "30ml": "8 €", "100ml": "20 €" };
+const PERFUME_PRICE = "100ml — 20 €";
 
 const PRODUCTS = [
   { name:"Rose Nocturne",      category:"mujer",         notes:"Rosa, oud y vainilla. Cálido y envolvente.", bestseller:true },
@@ -576,7 +575,7 @@ const BOTTLE_ICON = `<svg viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.o
 
 const CATEGORY_LABEL = { mujer:"Perfume · Mujer", hombre:"Perfume · Hombre", brumas:"Bruma corporal", ambientadores:"Ambientador de hogar" };
 const TONE_CLASS = { mujer:"tone-mujer", hombre:"tone-hombre", brumas:"tone-brumas", ambientadores:"tone-ambientadores" };
-const HAS_SIZES = { mujer:true, hombre:true, brumas:false, ambientadores:false };
+const IS_PERFUME = { mujer:true, hombre:true, brumas:false, ambientadores:false };
 
 function mediaHTML(p){
   return p.img
@@ -664,10 +663,9 @@ navOverlay.addEventListener('click', closeMobileNav);
 
 /* ======================================================================
    FICHA DE PRODUCTO INDIVIDUAL (modal)
-   Al hacer click en un producto se muestra solo ese producto. Si es un
-   perfume (mujer/hombre), aparecen los botones 30ml / 100ml y el precio
-   solo se muestra cuando se elige un tamaño. Brumas y ambientadores
-   muestran directamente su precio fijo.
+   Al hacer click en un producto se muestra solo ese producto, con su
+   precio fijo directamente visible (los perfumes siempre en formato
+   100ml a 20€; brumas y ambientadores con su precio propio).
    ====================================================================== */
 const productModal   = document.getElementById('productModal');
 const modalClose      = document.getElementById('modalClose');
@@ -679,9 +677,8 @@ const modalSizes      = document.getElementById('modalSizes');
 const modalPrice      = document.getElementById('modalPrice');
 const modalWhatsapp   = document.getElementById('modalWhatsapp');
 
-function buildWhatsappLink(productName, sizeLabel, priceLabel){
-  const sizeText = sizeLabel ? ` (${sizeLabel})` : '';
-  const msg = `Hola, me interesa ${productName}${sizeText}${priceLabel ? ' - ' + priceLabel : ''}`;
+function buildWhatsappLink(productName, priceLabel){
+  const msg = `Hola, me interesa ${productName}${priceLabel ? ' - ' + priceLabel : ''}`;
   return `https://wa.me/34604954153?text=${encodeURIComponent(msg)}`;
 }
 
@@ -695,37 +692,14 @@ function openProductModal(id){
   modalName.textContent = p.name;
   modalNotes.textContent = p.notes || '';
 
-  if (HAS_SIZES[p.category]){
-    modalSizes.style.display = 'flex';
-    modalSizes.innerHTML = Object.keys(SIZE_PRICES).map(size =>
-      `<button class="size-btn" data-size="${size}">${size}</button>`
-    ).join('');
+  const priceLabel = IS_PERFUME[p.category] ? PERFUME_PRICE : (p.price || '');
 
-    modalPrice.textContent = 'Selecciona un tamaño';
-    modalPrice.classList.add('placeholder');
-    modalWhatsapp.classList.remove('active');
-    modalWhatsapp.removeAttribute('href');
-
-    modalSizes.querySelectorAll('.size-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        modalSizes.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const size = btn.dataset.size;
-        const price = SIZE_PRICES[size];
-        modalPrice.textContent = `${size} — ${price}`;
-        modalPrice.classList.remove('placeholder');
-        modalWhatsapp.classList.add('active');
-        modalWhatsapp.href = buildWhatsappLink(p.name, size, price);
-      });
-    });
-  } else {
-    modalSizes.style.display = 'none';
-    modalSizes.innerHTML = '';
-    modalPrice.textContent = p.price || '';
-    modalPrice.classList.remove('placeholder');
-    modalWhatsapp.classList.add('active');
-    modalWhatsapp.href = buildWhatsappLink(p.name, null, p.price);
-  }
+  modalSizes.style.display = 'none';
+  modalSizes.innerHTML = '';
+  modalPrice.textContent = priceLabel;
+  modalPrice.classList.remove('placeholder');
+  modalWhatsapp.classList.add('active');
+  modalWhatsapp.href = buildWhatsappLink(p.name, priceLabel);
 
   productModal.classList.add('open');
   document.body.style.overflow = 'hidden';
